@@ -118,15 +118,18 @@ APPS = [
              "<b>Foto de tu michi:</b> si agregas a tu gato, eliges la foto de tu galería. Se guarda solo en tu teléfono.",
              "<b>Notificaciones:</b> para avisarte de tus vidas o del reto, si las activas.",
              "<b>Progreso y colección:</b> se guardan solo en tu teléfono.",
-         ], "en": [
+         ], "kids": {
+             "es": "¡Michis Amasadores! es apta para niños y cumple la política de Familias de Google Play. Todos los anuncios se piden como contenido para menores: no son personalizados, son aptos para todo público y no usan el identificador de publicidad para crear perfiles. No pedimos nombre, correo ni ubicación. La foto de tu michi se queda en el teléfono. Las compras requieren la autorización de la cuenta de Google Play del dispositivo; te recomendamos activar la aprobación de compras en Google Family Link. Madres, padres o tutores pueden escribirnos en cualquier momento.",
+             "en": "Kneady Cats! is suitable for children and follows the Google Play Families policy. All ads are requested as child-directed: they are not personalized, are rated for all audiences and do not use the advertising ID to build profiles. We don't ask for a name, email or location. Your cat's photo stays on the phone. Purchases require authorization from the device's Google Play account; we recommend turning on purchase approval in Google Family Link. Parents or guardians can write to us at any time.",
+         }, "en": [
              "<b>Your cat's photo:</b> if you add your cat, you pick the photo from your gallery. It is stored only on your phone.",
              "<b>Notifications:</b> to let you know about lives or challenges, if you turn them on.",
              "<b>Progress and collection:</b> stored only on your phone.",
          ]}),
     dict(slug="diableros", carpeta="diableros_central", id="com.ganddda.diableros",
          nombre={"es": "Diableros de la Central", "en": "Diableros de la Central"},
-         lema={"es": "Reparte en diablito con los michis de la Central.",
-               "en": "Deliver by hand truck with the cats of the Central market."},
+         lema={"es": "¡Pásele, marchante!",
+               "en": "Step right up, friend!"},
          extras=[],
          datos={"es": [
              "<b>Sensores de movimiento:</b> para controlar el juego.",
@@ -290,12 +293,14 @@ def generar(lang):
         secs = [f"<h2>{t['sum_t']}</h2><p>{t['sum']}</p>",
                 f"<h2>{t['who_t']}</h2><p>{t['who'].format(app=n, mail=CONTACTO)}</p>",
                 f"<h2>{t['data_t']}</h2><ul>" + "".join(f"<li>{d}</li>" for d in a["datos"][lang]) + "</ul>"]
-        if ADS in a["extras"]:
+        if ADS in a["extras"] and "kids" not in a["datos"]:
             secs.append(f"<h2>{t['ads_t']}</h2><p>{t['ads']}</p>")
         if IAP in a["extras"]:
             secs.append(f"<h2>{t['iap_t']}</h2><p>{t['iap']}</p>")
         for k in ("share", "kids", "del", "chg"):
             body = t["dele"] if k == "del" else t[k]
+            if k == "kids" and "kids" in a["datos"]:
+                body = a["datos"]["kids"][lang]
             secs.append(f"<h2>{t[k + '_t']}</h2><p>{body}</p>")
         cuerpo = f"""<article class="doc">
 <img class="mini" src="{'../' * (prof0 + 1)}img/{a['slug']}.png" alt="" width="64" height="64">
