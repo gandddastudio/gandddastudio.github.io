@@ -224,6 +224,9 @@ REDES = [
     ("TikTok", "https://www.tiktok.com/@gandddastudio", "tt",
      '<path d="M14 3h3.2c.3 2.3 1.8 3.9 4 4.1v3.2c-1.5 0-2.9-.4-4-1.2v6.4A5.6 5.6 0 1 1 11.6 10v3.3'
      'a2.4 2.4 0 1 0 2.4 2.3z" fill="currentColor"/>'),
+    ("Facebook", "https://www.facebook.com/gandddastudio", "fb",
+     '<circle cx="12" cy="12" r="10" fill="currentColor"/>'
+     '<path d="M13.2 21v-6.6h2.3l.4-2.8h-2.7V9.9c0-.8.3-1.4 1.4-1.4H16V6.1c-.3 0-1.1-.1-2-.1-2 0-3.4 1.2-3.4 3.5v2.1H8.4v2.8h2.2V21z" fill="var(--noche)"/>'),
     ("YouTube", "https://www.youtube.com/@gandddastudio", "yt",
      '<rect x="2" y="5" width="20" height="14" rx="4.5" fill="currentColor"/>'
      '<path d="M10 9l5.2 3L10 15z" fill="var(--noche)"/>'),
@@ -383,7 +386,7 @@ INICIO = {
         caption="// el Doctor Molina + michi",
         kicker2="el creador", h2="Detrás de Ganddda",
         kicker3="@gandddastudio", h3="Síguenos",
-        redes_txt="Adelantos, michis amasando y avisos de lanzamiento. Te esperamos en Instagram, TikTok y YouTube.",
+        redes_txt="Adelantos, michis amasando y avisos de lanzamiento. Te esperamos en Instagram, TikTok, Facebook y YouTube.",
         bio=[
             "A los 16 años soñaba con ser programador y crear mis propios videojuegos. El camino dio una vuelta: primero aprendí arreglando <strong>software financiero</strong>, donde cada error cuesta dinero real y cada detalle importa.",
             "En el mundo profesional me conocen como <strong>«el Doctor» Molina</strong>; en los juegos, como <strong>Ganddda</strong>. Ganddda Studio junta las dos cosas: el oficio de quien arregla sistemas críticos y las ganas de aquel chavo de 16 de hacer <strong>apps divertidas para todos</strong>.",
@@ -405,7 +408,7 @@ INICIO = {
         caption="// Doctor Molina + cat",
         kicker2="the creator", h2="Behind Ganddda",
         kicker3="@gandddastudio", h3="Follow us",
-        redes_txt="Sneak peeks, kneading cats and launch news. Find us on Instagram, TikTok and YouTube.",
+        redes_txt="Sneak peeks, kneading cats and launch news. Find us on Instagram, TikTok, Facebook and YouTube.",
         bio=[
             "At 16 I dreamed of becoming a programmer and making my own video games. The road took a detour: I first learned by fixing <strong>financial software</strong>, where every bug costs real money and every detail matters.",
             "Professionally I'm known as <strong>“the Doctor” Molina</strong>; in games, as <strong>Ganddda</strong>. Ganddda Studio brings both together: the craft of someone who fixes critical systems and that 16-year-old's drive to make <strong>fun apps for everyone</strong>.",

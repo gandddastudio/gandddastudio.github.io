@@ -341,7 +341,7 @@ a:hover { color: var(--crema); }
 .red svg { color: var(--c); }
 .red:hover { transform: translateY(-3px); background: color-mix(in srgb, var(--c) 22%, transparent);
   box-shadow: 0 10px 30px -12px var(--c); }
-.red-ig { --c: var(--coral); } .red-tt { --c: var(--menta); } .red-yt { --c: var(--lavanda); }
+.red-ig { --c: var(--coral); } .red-tt { --c: var(--menta); } .red-fb { --c: var(--oro); } .red-yt { --c: var(--lavanda); }
 .pie-redes { display: flex; gap: 6px; align-items: center; }
 .pie-red { display: inline-flex; padding: 6px; border-radius: 10px; }
 .pie-red span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
