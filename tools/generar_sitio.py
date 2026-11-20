@@ -215,14 +215,38 @@ FUENTES = ("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700
            "&family=Playfair+Display:ital,wght@1,600&family=Space+Grotesk:wght@400;500;700"
            "&family=Syne:wght@700;800&display=swap")
 
+# Redes sociales (mismo usuario en todas). Para agregar otra, suma una tupla aquí.
+REDES = [
+    ("Instagram", "https://www.instagram.com/gandddastudio/", "ig",
+     '<rect x="3" y="3" width="18" height="18" rx="5.5" fill="none" stroke="currentColor" stroke-width="2"/>'
+     '<circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/>'
+     '<circle cx="17.4" cy="6.6" r="1.3" fill="currentColor"/>'),
+    ("TikTok", "https://www.tiktok.com/@gandddastudio", "tt",
+     '<path d="M14 3h3.2c.3 2.3 1.8 3.9 4 4.1v3.2c-1.5 0-2.9-.4-4-1.2v6.4A5.6 5.6 0 1 1 11.6 10v3.3'
+     'a2.4 2.4 0 1 0 2.4 2.3z" fill="currentColor"/>'),
+    ("YouTube", "https://www.youtube.com/@gandddastudio", "yt",
+     '<rect x="2" y="5" width="20" height="14" rx="4.5" fill="currentColor"/>'
+     '<path d="M10 9l5.2 3L10 15z" fill="var(--noche)"/>'),
+]
+
+
+def icono_red(svg, tam=22):
+    return f'<svg viewBox="0 0 24 24" width="{tam}" height="{tam}" aria-hidden="true">{svg}</svg>'
+
+
+def enlaces_redes(clase):
+    return "".join(f'<a class="{clase} red-{k}" href="{url}" target="_blank" rel="noopener me" aria-label="{n} @gandddastudio">'
+                   f'{icono_red(svg)}<span>{n}</span></a>' for n, url, k, svg in REDES)
+
+
 UI = {
     "es": dict(home="index.html", support="soporte.html", pol_dir="privacidad",
                nav_apps="Apps", nav_about="Acerca de", nav_support="Soporte", other="EN", other_lang="en",
-               skip="Saltar al contenido", sound="Sonido", made="Hecho en México",
+               skip="Saltar al contenido", sound="Sonido", made="Hecho en México", social="Redes sociales",
                desc="Ganddda Studio: apps y juegos divertidos para todos, hechos en México. Michis, mosquitos, suerte, tarot y más."),
     "en": dict(home="index.html", support="support.html", pol_dir="privacy",
                nav_apps="Apps", nav_about="About", nav_support="Support", other="ES", other_lang="es",
-               skip="Skip to content", sound="Sound", made="Made in Mexico",
+               skip="Skip to content", sound="Sound", made="Made in Mexico", social="Social media",
                desc="Ganddda Studio: fun apps and games for everyone, made in Mexico. Cats, mosquitoes, luck, tarot and more."),
 }
 
@@ -339,6 +363,7 @@ def pagina(lang, titulo, cuerpo, prof, otro_href, inicio=False):
 </main>
 <footer class="pie"><div class="wrap">
   <span>© 2026 Ganddda Studio · {u['made']}</span>
+  <nav class="pie-redes" aria-label="{u['social']}">{enlaces_redes("pie-red")}</nav>
   <span class="mono"><a href="mailto:{CONTACTO}">{CONTACTO}</a> · <a href="{sup}">{u['nav_support']}</a></span>
 </div></footer>
 {extras}</body>
@@ -357,6 +382,8 @@ INICIO = {
         alt="El creador de Ganddda Studio con un gato Maine Coon en brazos",
         caption="// el Doctor Molina + michi",
         kicker2="el creador", h2="Detrás de Ganddda",
+        kicker3="@gandddastudio", h3="Síguenos",
+        redes_txt="Adelantos, michis amasando y avisos de lanzamiento. Te esperamos en Instagram, TikTok y YouTube.",
         bio=[
             "A los 16 años soñaba con ser programador y crear mis propios videojuegos. El camino dio una vuelta: primero aprendí arreglando <strong>software financiero</strong>, donde cada error cuesta dinero real y cada detalle importa.",
             "En el mundo profesional me conocen como <strong>«el Doctor» Molina</strong>; en los juegos, como <strong>Ganddda</strong>. Ganddda Studio junta las dos cosas: el oficio de quien arregla sistemas críticos y las ganas de aquel chavo de 16 de hacer <strong>apps divertidas para todos</strong>.",
@@ -377,6 +404,8 @@ INICIO = {
         alt="The creator of Ganddda Studio holding a Maine Coon cat",
         caption="// Doctor Molina + cat",
         kicker2="the creator", h2="Behind Ganddda",
+        kicker3="@gandddastudio", h3="Follow us",
+        redes_txt="Sneak peeks, kneading cats and launch news. Find us on Instagram, TikTok and YouTube.",
         bio=[
             "At 16 I dreamed of becoming a programmer and making my own video games. The road took a detour: I first learned by fixing <strong>financial software</strong>, where every bug costs real money and every detail matters.",
             "Professionally I'm known as <strong>“the Doctor” Molina</strong>; in games, as <strong>Ganddda</strong>. Ganddda Studio brings both together: the craft of someone who fixes critical systems and that 16-year-old's drive to make <strong>fun apps for everyone</strong>.",
@@ -454,7 +483,14 @@ def generar(lang):
       </dl>
     </div>
   </div>
-</section>"""
+</section>
+<section class="siguenos wrap" id="redes" aria-labelledby="t-redes">
+  <p class="kicker mono">{h['kicker3']}</p>
+  <h2 id="t-redes">{h['h3']}</h2>
+  <p>{h['redes_txt']}</p>
+  <div class="redes">{enlaces_redes("red")}</div>
+</section>
+<script type="application/ld+json">{{"@context":"https://schema.org","@type":"Organization","name":"Ganddda Studio","url":"{SITIO}/","email":"{CONTACTO}","sameAs":[{",".join('"' + r[1] + '"' for r in REDES)}]}}</script>"""
     otro = "en/index.html" if lang == "es" else "../index.html"
     escribir(pre / "index.html", pagina(lang, h["titulo"], cuerpo, prof0, otro, inicio=True))
 

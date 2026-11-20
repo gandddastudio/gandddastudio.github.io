@@ -101,7 +101,7 @@ a:hover { color: var(--crema); }
 /* ── Catálogo ─────────────────────────────────────────────── */
 .catalogo { padding-bottom: 72px; scroll-margin-top: 80px; }
 .barra { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
-.barra h2, .acerca h2 { font: 800 clamp(30px, 4.5vw, 44px)/1 var(--f-display); margin: 0; letter-spacing: -.02em; }
+.barra h2, .acerca h2, .siguenos h2 { font: 800 clamp(30px, 4.5vw, 44px)/1 var(--f-display); margin: 0; letter-spacing: -.02em; }
 .filtros { display: flex; gap: 8px; flex-wrap: wrap; }
 .filtro {
   all: unset; cursor: pointer; font: 700 12px var(--f-mono); letter-spacing: .06em; text-transform: uppercase;
@@ -324,3 +324,26 @@ a:hover { color: var(--crema); }
   .top { position: relative; }
   .nav a, .nav button { padding: 8px 10px; }
 }
+
+/* ── Redes sociales ─────────────────────────── */
+.siguenos { padding: 72px 0 88px; text-align: center; }
+.siguenos h2 { margin: 10px 0 14px; }
+.siguenos > p:not(.kicker) { color: var(--suave); max-width: 46ch; margin: 0 auto 28px; }
+.redes { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; }
+.red {
+  --c: var(--lima);
+  display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  background: color-mix(in srgb, var(--c) 10%, transparent);
+  color: var(--crema); font-weight: 700; text-decoration: none;
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.red svg { color: var(--c); }
+.red:hover { transform: translateY(-3px); background: color-mix(in srgb, var(--c) 22%, transparent);
+  box-shadow: 0 10px 30px -12px var(--c); }
+.red-ig { --c: var(--coral); } .red-tt { --c: var(--menta); } .red-yt { --c: var(--lavanda); }
+.pie-redes { display: flex; gap: 6px; align-items: center; }
+.pie-red { display: inline-flex; padding: 6px; border-radius: 10px; }
+.pie-red span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.pie-red:hover { background: var(--linea); }
+@media (prefers-reduced-motion: reduce) { .red, .red:hover { transition: none; transform: none; } }
