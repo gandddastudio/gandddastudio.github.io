@@ -3,8 +3,13 @@
 Uso (desde la carpeta ganddda_web):
     python tools/generar_sitio.py
 
-Edita CONTACTO, PUBLICADO y la lista APPS; vuelve a correr el script y sube los cambios.
+El catálogo (nombres, categorías, tamaños, estado en Play) vive en apps.js.
+Aquí solo están los textos de las políticas de privacidad de cada app (lista APPS,
+unida a apps.js por el campo slug = id). Al agregar una app a apps.js, agrega
+también su bloque aquí con lo que usa la app.
 """
+import json
+import re
 from pathlib import Path
 from PIL import Image
 
@@ -142,8 +147,6 @@ APPS = [
          ]}),
 ]
 
-# Cambia a True cada app cuando ya esté publicada en Google Play.
-PUBLICADO = {a["slug"]: False for a in APPS}
 
 T = {
     "es": dict(
@@ -207,35 +210,184 @@ T = {
 }
 
 
-def pagina(lang, titulo, cuerpo, prof, otro_href):
-    t = T[lang]
+SITIO = "https://gandddastudio.github.io"
+FUENTES = ("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700"
+           "&family=Playfair+Display:ital,wght@1,600&family=Space+Grotesk:wght@400;500;700"
+           "&family=Syne:wght@700;800&display=swap")
+
+UI = {
+    "es": dict(home="index.html", support="soporte.html", pol_dir="privacidad",
+               nav_apps="Apps", nav_about="Acerca de", nav_support="Soporte", other="EN", other_lang="en",
+               skip="Saltar al contenido", sound="Sonido", made="Hecho en México",
+               desc="Ganddda Studio: apps y juegos divertidos para todos, hechos en México. Michis, mosquitos, suerte, tarot y más."),
+    "en": dict(home="index.html", support="support.html", pol_dir="privacy",
+               nav_apps="Apps", nav_about="About", nav_support="Support", other="ES", other_lang="es",
+               skip="Skip to content", sound="Sound", made="Made in Mexico",
+               desc="Ganddda Studio: fun apps and games for everyone, made in Mexico. Cats, mosquitoes, luck, tarot and more."),
+}
+
+MICHI_SVG = """<svg viewBox="0 0 130 72" xmlns="http://www.w3.org/2000/svg"><g fill="currentColor">
+<path d="M30 40c-9-2-16-9-17-19-1-6 2-11 6-13-3 6-2 13 3 18 3 3 7 5 11 6z"/>
+<path d="M28 34c4-9 16-14 34-14h26c5 0 9-2 12-6l5-9 3 9 6-8 1 11c5 4 7 10 5 16-2 7-8 10-15 11l-2 19h-7l-2-15H62l-5 15h-7l1-16c-11-2-19-6-23-13z"/>
+</g><circle cx="108" cy="25" r="2.2" fill="#0E0B1F"/></svg>"""
+
+
+def leer_catalogo():
+    """Lee apps.js (sintaxis de JavaScript) y lo convierte a datos de Python."""
+    src = (RAIZ / "apps.js").read_text(encoding="utf-8")
+    limpio, i, en_str = [], 0, False
+    while i < len(src):
+        c = src[i]
+        if en_str:
+            limpio.append(c)
+            if c == "\\":
+                limpio.append(src[i + 1])
+                i += 1
+            elif c == '"':
+                en_str = False
+        elif c == '"':
+            en_str = True
+            limpio.append(c)
+        elif src.startswith("//", i):
+            while i < len(src) and src[i] != "\n":
+                i += 1
+            continue
+        else:
+            limpio.append(c)
+        i += 1
+    js = "".join(limpio)
+
+    def a_json(texto):
+        partes = re.split(r'("(?:[^"\\]|\\.)*")', texto)
+        for k in range(0, len(partes), 2):  # solo fuera de las cadenas
+            partes[k] = re.sub(r"([A-Za-z_]\w*)\s*:", r'"\1":', partes[k])
+            partes[k] = re.sub(r",(\s*[\]}])", r"\1", partes[k])
+        return "".join(partes)
+
+    def bloque(nombre):
+        m = re.search(rf"export\s+const\s+{nombre}\s*=\s*", js)
+        if not m:
+            raise SystemExit(f"apps.js: falta «export const {nombre} = ...»")
+        resto = js[m.end():]
+        fin = resto.index(";\n") if ";\n" in resto else len(resto)
+        try:
+            return json.loads(a_json(resto[:fin]))
+        except json.JSONDecodeError as e:
+            raise SystemExit(f"apps.js: error de formato en {nombre} ({e}). Revisa comas y comillas dobles.")
+
+    return bloque("CATEGORIES"), bloque("APPS")
+
+
+CATEGORIAS, CATALOGO = leer_catalogo()
+POLITICAS = {a["slug"]: a for a in APPS}
+for _app in CATALOGO:
+    if _app["id"] not in POLITICAS:
+        raise SystemExit(f"Falta la política de privacidad de «{_app['id']}» en la lista APPS de este script.")
+    if _app["category"] not in CATEGORIAS:
+        raise SystemExit(f"«{_app['id']}» usa la categoría «{_app['category']}», que no está en CATEGORIES.")
+    POLITICAS[_app["id"]]["nombre"] = _app["name"]
+APPS = [POLITICAS[a["id"]] for a in CATALOGO]
+
+
+def pagina(lang, titulo, cuerpo, prof, otro_href, inicio=False):
+    u = UI[lang]
     base = "../" * prof
-    home = base + ("" if lang == "es" else "en/") + t["home"]
-    sup = base + ("" if lang == "es" else "en/") + t["support"]
+    home = base + ("" if lang == "es" else "en/") + u["home"]
+    sup = base + ("" if lang == "es" else "en/") + u["support"]
+    anc = "" if inicio else home
+    if inicio:
+        marca = ('<button class="wordmark" id="marca" type="button" aria-label="Ganddda Studio">'
+                 '<span class="wm-g">Ganddda</span><span class="wm-s">Studio</span></button>')
+        sonido = f'<button class="sonido" id="sonido" type="button" aria-pressed="false" aria-label="{u["sound"]}">🔇</button>'
+        script = f'<script type="module" src="{base}js/site.js"></script>\n'
+        extras = (f'<div class="relampago" aria-hidden="true"></div>\n'
+                  f'<div class="michi" aria-hidden="true">{MICHI_SVG}</div>\n'
+                  f'<div class="aviso" id="aviso" role="status" aria-live="polite"></div>\n')
+    else:
+        marca = (f'<a class="wordmark" href="{home}" aria-label="Ganddda Studio">'
+                 '<span class="wm-g">Ganddda</span><span class="wm-s">Studio</span></a>')
+        sonido = script = extras = ""
     return f"""<!doctype html>
 <html lang="{lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{titulo}</title>
+<meta name="description" content="{u['desc']}">
+<meta name="theme-color" content="#0E0B1F">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{titulo}">
+<meta property="og:description" content="{u['desc']}">
+<meta property="og:image" content="{SITIO}/img/creador-og.jpg">
 <link rel="icon" href="{base}img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+<link href="{FUENTES}" rel="stylesheet">
 <link rel="stylesheet" href="{base}style.css">
-</head>
-<body>
-<header>
-  <a class="marca" href="{home}"><span>Ganddda</span><small>Studio</small></a>
-  <nav><a href="{home}">{t['apps']}</a><a href="{sup}">{t['support_t']}</a><a href="{otro_href}">{t['other']}</a></nav>
-</header>
-<main>
+{script}</head>
+<body data-base="{base}">
+<a class="skip" href="#contenido">{u['skip']}</a>
+<header class="top"><div class="wrap">
+  {marca}
+  <nav class="nav" aria-label="Ganddda Studio">
+    <a href="{anc}#apps">{u['nav_apps']}</a><a href="{anc}#acerca">{u['nav_about']}</a><a href="{sup}">{u['nav_support']}</a>
+    <a class="idioma" href="{otro_href}" hreflang="{u['other_lang']}" lang="{u['other_lang']}">{u['other']}</a>{sonido}
+  </nav>
+</div></header>
+<main id="contenido">
 {cuerpo}
 </main>
-<footer>{t['foot']} · <a href="mailto:{CONTACTO}">{CONTACTO}</a></footer>
-</body>
+<footer class="pie"><div class="wrap">
+  <span>© 2026 Ganddda Studio · {u['made']}</span>
+  <span class="mono"><a href="mailto:{CONTACTO}">{CONTACTO}</a> · <a href="{sup}">{u['nav_support']}</a></span>
+</div></footer>
+{extras}</body>
 </html>
 """
+
+
+INICIO = {
+    "es": dict(
+        titulo="Ganddda Studio · Apps divertidas para todos",
+        kicker="estudio indie · hecho en México",
+        h1='Apps divertidas <span class="hl">para todos.</span>',
+        lead="Juegos, herramientas y un poquito de suerte. Hechas con cariño, en tres idiomas y sin cuentas obligatorias.",
+        stats=["<b>{n}</b> APPS", "<b>3</b> IDIOMAS", "<b>0</b> CUENTAS OBLIGATORIAS", "<b>∞</b> MICHIS"],
+        catalogo="Catálogo", filtrar="Filtrar por categoría",
+        alt="El creador de Ganddda Studio con un gato Maine Coon en brazos",
+        caption="// el Doctor Molina + michi",
+        kicker2="el creador", h2="Detrás de Ganddda",
+        bio=[
+            "A los 16 años soñaba con ser programador y crear mis propios videojuegos. El camino dio una vuelta: primero aprendí arreglando <strong>software financiero</strong>, donde cada error cuesta dinero real y cada detalle importa.",
+            "En el mundo profesional me conocen como <strong>«el Doctor» Molina</strong>; en los juegos, como <strong>Ganddda</strong>. Ganddda Studio junta las dos cosas: el oficio de quien arregla sistemas críticos y las ganas de aquel chavo de 16 de hacer <strong>apps divertidas para todos</strong>.",
+        ],
+        ficha=[("alias.profesional", '<span class="str">"el Doctor" Molina</span>'),
+               ("gamertag", '<span class="str">"Ganddda"</span>'),
+               ("hecho.en", "México"),
+               ("sueño.desde", "los 16 años"),
+               ("apps", '{n} → ∞ <span class="cursor"></span>')],
+    ),
+    "en": dict(
+        titulo="Ganddda Studio · Fun apps for everyone",
+        kicker="indie studio · made in Mexico",
+        h1='Fun apps <span class="hl">for everyone.</span>',
+        lead="Games, tools and a little bit of luck. Made with care, in three languages, no sign-up required.",
+        stats=["<b>{n}</b> APPS", "<b>3</b> LANGUAGES", "<b>0</b> REQUIRED ACCOUNTS", "<b>∞</b> CATS"],
+        catalogo="Catalog", filtrar="Filter by category",
+        alt="The creator of Ganddda Studio holding a Maine Coon cat",
+        caption="// Doctor Molina + cat",
+        kicker2="the creator", h2="Behind Ganddda",
+        bio=[
+            "At 16 I dreamed of becoming a programmer and making my own video games. The road took a detour: I first learned by fixing <strong>financial software</strong>, where every bug costs real money and every detail matters.",
+            "Professionally I'm known as <strong>“the Doctor” Molina</strong>; in games, as <strong>Ganddda</strong>. Ganddda Studio brings both together: the craft of someone who fixes critical systems and that 16-year-old's drive to make <strong>fun apps for everyone</strong>.",
+        ],
+        ficha=[("alias.professional", '<span class="str">"the Doctor" Molina</span>'),
+               ("gamertag", '<span class="str">"Ganddda"</span>'),
+               ("made.in", "Mexico"),
+               ("dreaming.since", "age 16"),
+               ("apps", '{n} → ∞ <span class="cursor"></span>')],
+    ),
+}
 
 
 def escribir(ruta, texto):
@@ -245,53 +397,79 @@ def escribir(ruta, texto):
 
 def iconos():
     for a in APPS:
-        src = APPS_DIR / a["carpeta"] / "assets" / "icon" / "icon.png"
+        src = APPS_DIR / a.get("carpeta", "-") / "assets" / "icon" / "icon.png"
         if not src.exists():
             continue
         im = Image.open(src).convert("RGBA")
         im.thumbnail((256, 256), Image.LANCZOS)
         im.save(RAIZ / "img" / f"{a['slug']}.png", optimize=True)
-    fav = Image.open(RAIZ / "img" / "mi-suerte-hoy.png")
-    fav.resize((64, 64), Image.LANCZOS).save(RAIZ / "img" / "favicon.png")
+    for a in CATALOGO:
+        if not (RAIZ / "img" / f"{a['id']}.png").exists():
+            print(f"Aviso: falta el ícono img/{a['id']}.png")
+    Image.open(RAIZ / "img" / "mi-suerte-hoy.png").resize((64, 64), Image.LANCZOS).save(RAIZ / "img" / "favicon.png")
 
 
 def generar(lang):
-    t = T[lang]
+    t, u, h = T[lang], UI[lang], INICIO[lang]
     pre = RAIZ if lang == "es" else RAIZ / "en"
     prof0 = 0 if lang == "es" else 1
-    base = "../" * prof0
+    n = len(CATALOGO)
 
     # Inicio
-    tarjetas = []
-    for a in APPS:
-        n = a["nombre"][lang]
-        url = f"https://play.google.com/store/apps/details?id={a['id']}"
-        boton = (f"<a class='btn' href='{url}'>{t['play']}</a>" if PUBLICADO[a['slug']]
-                 else f"<span class='btn off'>{t['soon']}</span>")
-        tarjetas.append(f"""<article class="app">
-  <img src="{base}img/{a['slug']}.png" alt="" width="96" height="96">
-  <div><h3>{n}</h3><p>{a['lema'][lang]}</p>
-  <div class="acciones">{boton}<a href="{t['pol_dir']}/{a['slug']}.html">{t['privacy']}</a></div></div>
-</article>""")
-    cuerpo = f"""<section class="hero"><h1><span>Ganddda</span><small>Studio</small></h1><p>{t['tagline']}</p></section>
-<h2>{t['apps']}</h2>
-<div class="grid">
-{chr(10).join(tarjetas)}
-</div>"""
+    sin_js = "\n".join(
+        f'    <li><a href="{u["pol_dir"]}/{a["id"]}.html">{a["name"][lang]}</a> · {a["tagline"][lang]}</li>'
+        for a in CATALOGO)
+    stats = "".join(f"<li>{s.format(n=n)}</li>" for s in h["stats"])
+    bio = "\n".join(f"      <p>{p}</p>" for p in h["bio"])
+    ficha = "\n".join(f"        <div><dt>{k}</dt><dd>{v.format(n=n)}</dd></div>" for k, v in h["ficha"])
+    img = "../img" if lang == "en" else "img"
+    cuerpo = f"""<section class="hero wrap">
+  <p class="kicker mono">{h['kicker']}</p>
+  <h1>{h['h1']}</h1>
+  <p class="lead">{h['lead']}</p>
+  <ul class="stats mono">{stats}</ul>
+</section>
+<section class="catalogo wrap" id="apps" aria-labelledby="t-apps">
+  <div class="barra">
+    <h2 id="t-apps">{h['catalogo']}</h2>
+    <div class="filtros" id="filtros" role="group" aria-label="{h['filtrar']}"></div>
+  </div>
+  <ul class="bento" id="bento"></ul>
+  <noscript><ul class="lista-simple">
+{sin_js}
+  </ul></noscript>
+</section>
+<section class="acerca" id="acerca" aria-labelledby="t-acerca">
+  <div class="wrap grid">
+    <figure class="retrato">
+      <img src="{img}/creador.webp" alt="{h['alt']}" width="760" height="760" loading="lazy">
+      <figcaption>{h['caption']}</figcaption>
+    </figure>
+    <div>
+      <p class="kicker mono">{h['kicker2']}</p>
+      <h2 id="t-acerca">{h['h2']}</h2>
+{bio}
+      <dl class="ficha">
+{ficha}
+      </dl>
+    </div>
+  </div>
+</section>"""
     otro = "en/index.html" if lang == "es" else "../index.html"
-    escribir(pre / "index.html", pagina(lang, t["title"], cuerpo, prof0, otro))
+    escribir(pre / "index.html", pagina(lang, h["titulo"], cuerpo, prof0, otro, inicio=True))
 
     # Soporte
     otro_sup = "en/support.html" if lang == "es" else "../soporte.html"
-    cuerpo = f"""<article class="doc"><h1>{t['sup_title']}</h1><p>{t['sup']}</p>
-<p class="mail"><a href="mailto:{CONTACTO}">{CONTACTO}</a></p><p>{t['sup_buy']}</p></article>"""
+    cuerpo = (f'<article class="doc wrap"><p class="kicker mono">ganddda studio</p><h1>{t["sup_title"]}</h1>'
+              f'<p>{t["sup"]}</p>\n<p class="mail"><a href="mailto:{CONTACTO}">{CONTACTO}</a></p>'
+              f'<p>{t["sup_buy"]}</p></article>')
     escribir(pre / t["support"], pagina(lang, f"{t['sup_title']} · Ganddda Studio", cuerpo, prof0, otro_sup))
 
     # Políticas
     for a in APPS:
-        n = a["nombre"][lang]
+        nombre = a["nombre"][lang]
         secs = [f"<h2>{t['sum_t']}</h2><p>{t['sum']}</p>",
-                f"<h2>{t['who_t']}</h2><p>{t['who'].format(app=n, mail=CONTACTO)}</p>",
+                f"<h2>{t['who_t']}</h2><p>{t['who'].format(app=nombre, mail=CONTACTO)}</p>",
                 f"<h2>{t['data_t']}</h2><ul>" + "".join(f"<li>{d}</li>" for d in a["datos"][lang]) + "</ul>"]
         if ADS in a["extras"] and "kids" not in a["datos"]:
             secs.append(f"<h2>{t['ads_t']}</h2><p>{t['ads']}</p>")
@@ -302,20 +480,20 @@ def generar(lang):
             if k == "kids" and "kids" in a["datos"]:
                 body = a["datos"]["kids"][lang]
             secs.append(f"<h2>{t[k + '_t']}</h2><p>{body}</p>")
-        cuerpo = f"""<article class="doc">
-<img class="mini" src="{'../' * (prof0 + 1)}img/{a['slug']}.png" alt="" width="64" height="64">
-<h1>{t['pol_title']} · {n}</h1>
+        cuerpo = f"""<article class="doc wrap">
+<img class="mini" src="{'../' * (prof0 + 1)}img/{a['slug']}.png" alt="" width="72" height="72">
+<h1>{t['pol_title']} · {nombre}</h1>
 <p class="fecha">{t['updated']}: {ACTUALIZADO[lang]}</p>
 {chr(10).join(secs)}
 </article>"""
         otro_pol = (f"../en/privacy/{a['slug']}.html" if lang == "es"
                     else f"../../privacidad/{a['slug']}.html")
         escribir(pre / t["pol_dir"] / f"{a['slug']}.html",
-                 pagina(lang, f"{t['pol_title']} · {n}", cuerpo, prof0 + 1, otro_pol))
+                 pagina(lang, f"{t['pol_title']} · {nombre}", cuerpo, prof0 + 1, otro_pol))
 
 
 if __name__ == "__main__":
     iconos()
     generar("es")
     generar("en")
-    print("Sitio generado en", RAIZ)
+    print(f"Sitio generado en {RAIZ} con {len(CATALOGO)} apps.")
