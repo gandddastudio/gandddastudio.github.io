@@ -17,7 +17,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 APPS_DIR = RAIZ.parent
 
 CONTACTO = "gandddastudio@gmail.com"
-ACTUALIZADO = {"es": "19 de noviembre de 2026", "en": "November 19, 2026"}
+ACTUALIZADO = {"es": "21 de noviembre de 2026", "en": "November 21, 2026"}
 
 # Política común de anuncios y compras (se activa por app).
 ADS = "ads"
@@ -135,15 +135,15 @@ APPS = [
          nombre={"es": "Diableros de la Central", "en": "Diableros de la Central"},
          lema={"es": "¡Pásele, marchante!",
                "en": "Step right up, friend!"},
-         extras=[],
+         extras=[IAP],
          datos={"es": [
              "<b>Sensores de movimiento:</b> para controlar el juego.",
              "<b>Progreso:</b> se guarda solo en tu teléfono.",
-             "Esta app no tiene anuncios ni compras y no se conecta a internet.",
+             "Esta app no tiene anuncios. Solo se conecta a internet para las compras opcionales con Google Play.",
          ], "en": [
              "<b>Motion sensors:</b> to control the game.",
              "<b>Progress:</b> stored only on your phone.",
-             "This app has no ads or purchases and does not connect to the internet.",
+             "This app has no ads. It only connects to the internet for optional Google Play purchases.",
          ]}),
 ]
 
